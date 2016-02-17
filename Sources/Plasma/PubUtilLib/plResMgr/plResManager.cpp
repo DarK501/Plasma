@@ -320,6 +320,9 @@ bool plResManager::ReadObject(plKeyImp* key)
         kResMgrLog(3, ILog(3, "   ...Data stream failed to open on read!"));
         return false;
     }
+
+	plStatusLog::AddLineS("ResManager.log", "Load - %s", key->GetName().c_str());
+
     fReadingObject = true;
     bool ret = IReadObject(key, pageNode->OpenStream());
     fReadingObject = false;
@@ -336,6 +339,7 @@ bool plResManager::ReadObject(plKeyImp* key)
         for (int i = 0; i < children.size(); i++)
         {
             plKey childKey = children[i];
+			
             childKey->VerifyLoaded();
         }
     }
@@ -370,8 +374,10 @@ bool plResManager::IReadObject(plKeyImp* pKey, hsStream *stream)
         return false; // Try to recover from this by just not reading an object
 
     kResMgrLog(3, ILog(3, "   Reading object %s::%s", plFactory::GetNameOfClass(pKey->GetUoid().GetClassType()), pKey->GetUoid().GetObjectName().c_str()));
-
-    const plUoid& uoid = pKey->GetUoid();
+	
+	plStatusLog::AddLineS("ResManager.log", "Reading object %s::%s", plFactory::GetNameOfClass(pKey->GetUoid().GetClassType()), pKey->GetUoid().GetObjectName().c_str());
+    
+	const plUoid& uoid = pKey->GetUoid();
 
     bool isClone = uoid.IsClone();
 
@@ -414,7 +420,7 @@ bool plResManager::IReadObject(plKeyImp* pKey, hsStream *stream)
         kResMgrLog(4, ILog(4, "   ...Reading from position %d bytes...", pKey->GetStartPos()));
 
         plCreatable* cre = ReadCreatable(stream);
-        hsAssert(cre, "Could not Create Object");
+         // hsAssert(cre, "Could not Create Object"); // don't care if we can't create the object, pass forwards
         if (cre)
         {   
             ko = hsKeyedObject::ConvertNoRef(cre);
@@ -446,7 +452,7 @@ bool plResManager::IReadObject(plKeyImp* pKey, hsStream *stream)
     }
 
     kResMgrLog(4, ILog(4, "   ...Read complete for object %s::%s", plFactory::GetNameOfClass(pKey->GetUoid().GetClassType()), pKey->GetUoid().GetObjectName().c_str()));
-
+	plStatusLog::AddLineS("ResManager.log", "   ...Read complete for object %s::%s", plFactory::GetNameOfClass(pKey->GetUoid().GetClassType()), pKey->GetUoid().GetObjectName().c_str());
     if (fLogReadTimes)
     {
         uint64_t ourTime = hsTimer::GetTicks() - startTime;
@@ -929,26 +935,47 @@ bool plResManager::Unload(const plKey& objKey)
 
 plCreatable* plResManager::IReadCreatable(hsStream* s) const
 {
-    uint16_t hClass = s->ReadLE16();
-    plCreatable* pCre = plFactory::Create(hClass);
-    if (!pCre)
-        hsAssert( hClass == 0x8000, "Invalid creatable index" );
+	uint16_t hClass = s->ReadLE16();
 
-    return pCre;
+	plStatusLog::AddLineS("ResManager.log", "hClass :: %d", hClass);
+	
+	if (hClass != 63) {
+
+		plCreatable* pCre = plFactory::Create(hClass);
+
+		if (!pCre)
+			hsAssert(hClass == 0x8000, "Invalid creatable index");
+		
+		return pCre;
+	} else {
+
+		return false;
+	}
+
 }
 
 plCreatable* plResManager::ReadCreatable(hsStream* s)
 {
-    plCreatable *pCre = IReadCreatable(s);
-    if (pCre)
-        pCre->Read(s, this);
-    return pCre;
+
+	plCreatable *pCre = IReadCreatable(s);
+	
+	if (pCre) {
+		plStatusLog::AddLineS("ResManager.log", "ClassIndex :: %d", pCre->ClassIndex());
+		if (pCre->ClassIndex() == 63) { // ignore plPXPhysical objects
+			pCre->Read(s, this); // read the object but don't return it - not reading the object freaks out the ResMgr as it looses its file handler position
+			plStatusLog::AddLineS("ResManager.log", "IReadCreatable :: return false");
+			return false;
+		} else {
+			pCre->Read(s, this);
+			return pCre;
+		}
+	}
 }
 
 plCreatable* plResManager::ReadCreatableVersion(hsStream* s)
 {
     plCreatable *pCre = IReadCreatable(s);
-    if (pCre)
+	if (pCre)
         pCre->ReadVersion(s, this);
     return pCre;
 }

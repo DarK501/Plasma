@@ -1664,9 +1664,10 @@ bool plClient::IUpdate()
     if (fAnimDebugList)
         fAnimDebugList->ShowReport();
     
-    plProfile_BeginTiming(Simulation);
-    plSimulationMgr::GetInstance()->Advance(delSecs);
-    plProfile_EndTiming(Simulation);
+	// don't update the SimulationMgr
+    //plProfile_BeginTiming(Simulation);
+    //plSimulationMgr::GetInstance()->Advance(delSecs);
+    //plProfile_EndTiming(Simulation);
             
     // At this point, we just register for a plDelayedTransformMsg when dirtied.
     if (!plCoordinateInterface::GetDelayedTransformsEnabled())
@@ -2293,7 +2294,7 @@ void plClient::ICompleteInit () {
     // Reset clear color on the pipeline
 //  fPipeline->ClearRenderTarget( &fClearColor, &depth );
 
-    plSimulationMgr::GetInstance()->Resume();               // start the sim at the last possible minute
+    //plSimulationMgr::GetInstance()->Resume();               // start the sim at the last possible minute
 
     fFlags.SetBit( kFlagIniting, false );
     hsStatusMessage("Client init complete.");

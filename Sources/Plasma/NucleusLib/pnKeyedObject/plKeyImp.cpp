@@ -179,8 +179,12 @@ void plKeyImp::CopyForClone(const plKeyImp *p, uint32_t playerID, uint32_t clone
     fUoid.SetClone(playerID, cloneID);
 }
 
+#include "plStatusLog/plStatusLog.h"
+
 hsKeyedObject* plKeyImp::VerifyLoaded()
 {
+
+	plStatusLog::AddLineS("ResManager.log", "%s", this->GetName().c_str());
     if (!fObjectPtr)
         hsgResMgr::ResMgr()->ReadObject(this);
 
@@ -539,7 +543,7 @@ void plKeyImp::NotifyCreated()
 {
     hsKeyedObject* ko = GetObjectPtr();
     hsRefCnt_SafeRef(ko);
-    hsAssert(ko, "Notifying of created before on nil object");
+    //hsAssert(ko, "Notifying of created before on nil object"); // this is noisy when you block objects from loading
 
     INotifySelf(ko);
 
@@ -565,11 +569,11 @@ void plKeyImp::NotifyCreated()
 void plKeyImp::INotifyDestroyed()
 {
     hsKeyedObject* ko = GetObjectPtr();
-    hsAssert(ko, "Notifying of destroy on already destroyed");
+    // hsAssert(ko, "Notifying of destroy on already destroyed"); // this is noisy when you block objects from loading
     int i;
     for( i = 0; i < GetNumNotifyCreated(); i++ )
     {
-        hsAssert(ko, "Notifying of destroy on already destroyed");
+        //hsAssert(ko, "Notifying of destroy on already destroyed"); // this is also noisy when you block objects from loading - how many flipping asserts do we need?!
         plRefMsg* msg = GetNotifyCreated(i);
         msg->SetRef(ko);
         msg->SetTimeStamp(hsTimer::GetSysSeconds());

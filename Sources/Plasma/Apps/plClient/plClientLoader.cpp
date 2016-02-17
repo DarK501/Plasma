@@ -105,7 +105,10 @@ void plClientLoader::Run()
 
     fClient = new plClient;
     fClient->SetWindowHandle(fWindow);
-    if (!InitPhysX() || fClient->InitPipeline() || !fClient->StartInit()) {
+    
+	//if (!InitPhysX() || fClient->InitPipeline() || !fClient->StartInit()) {
+	// Disable SimulationMgr - this should freek out the client
+	if (fClient->InitPipeline() || !fClient->StartInit()) {
         fClient->SetDone(true);
     }
 }

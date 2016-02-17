@@ -1,8 +1,11 @@
+
+$env:OPENAL_INCLUDE_DIR = "C:\Program Files (x86)\OpenAL 1.1 SDK\libs"
+
 $devlibs_url = "http://guildofwriters.org/tools/devlibs.zip"
 
-if (!(Test-Path -PathType Container build)) {
+if (!(Test-Path -PathType Container "$PSScriptRoot\build")) {
     Write-Host "Creating build folder... " -noNewLine
-    New-Item -ItemType directory build | Out-Null
+    New-Item -ItemType directory "$PSScriptRoot\build" | Out-Null
     Write-Host "OK" -foregroundColor Green
 }
 Set-Location build
