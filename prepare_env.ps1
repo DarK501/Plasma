@@ -31,7 +31,8 @@ if (!(Test-Path -PathType Container devlibs)) {
 
 if(Get-ChildItem Env:PATH | Where-Object {$_.Value -match "CMake"}) {	
 	Write-Host "Running CMake to configure build system... "
-	cmake -DCMAKE_INSTALL_PREFIX=devlibs -DPLASMA_BUILD_TOOLS=OFF -DPLASMA_BUILD_RESOURCE_DAT=OFF -G "Visual Studio 12" ..
+	# Hack Bullet into the cmd line for now - fix this later
+    cmake -DCMAKE_INSTALL_PREFIX=devlibs -DPLASMA_BUILD_TOOLS=OFF -DPLASMA_BUILD_RESOURCE_DAT=OFF -DBULLET_ROOT='F:\Scratch\Plasma\build\devlibs\bullet' -G "Visual Studio 12" ..
 } else {
 	Write-Host "CMake not found in PATH."
 	Write-Host "Please run the CMake installer and select the option to add CMake to your system PATH."

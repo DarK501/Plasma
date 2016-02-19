@@ -151,6 +151,13 @@ set_package_properties(Freetype PROPERTIES
     PURPOSE "Required in order to build the plFontConverter tool"
 )
 
+find_package(Bullet REQUIRED)
+set_package_properties(Bullet PROPERTIES
+	URL "http://bulletphysics.org"
+	DESCRIPTION "Library for physics simulation"
+	TYPE REQUIRED
+)
+
 if(WIN32)
     #TODO: Not required if we aren't building the client
     find_package(PhysX REQUIRED)
