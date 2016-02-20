@@ -3,7 +3,6 @@
 */
 #include "plAvatar/plPhysicalControllerCore.h"
 
-// Our engine needs to inhert ControllerCore from the Avatar
 class plBTPhysicalControllerCore : public plPhysicalControllerCore
 {
 public:
@@ -11,8 +10,35 @@ public:
 	plBTPhysicalControllerCore(plKey ownerSO, float height, float radius, bool human);
 	~plBTPhysicalControllerCore();
 
+	virtual void Enable(bool enable);
 
+	// Subworld
+	virtual void SetSubworld(plKey world);
+
+	virtual void GetState(hsPoint3& pos, float& zRot);
+	virtual void SetState(const hsPoint3& pos, float zRot);
+
+	// Movement strategy
+	virtual void SetMovementStrategy(plMovementStrategy* strategy);
+
+	virtual void SetGlobalLoc(const hsMatrix44& l2w);
+
+	virtual void GetPositionSim(hsPoint3& pos);
+
+	virtual void Move(hsVector3 displacement, unsigned int collideWidth, unsigned int &collisionResults);
+
+	virtual void SetLinearVelocitySim(const hsVector3& linearVel);
+
+	virtual int SweepControllerPath(const hsPoint3& startPos, const hsPoint3& endPos, bool vsDynamics,
+		bool vsStatics, uint32_t& vsSimGroups, std::vector<plControllerSweepRecord>& hits);
+
+	virtual void LeaveAge();
 
 protected:
 	void ICreateController(const hsPoint3& pos);
+
+	virtual void IHandleEnableChanged();
+
+	bool fKinematicCCT;
+	bool fHuman;
 };

@@ -126,7 +126,7 @@ target_link_libraries(plClient plNetMessage)
 target_link_libraries(plClient plNetTransport)
 target_link_libraries(plClient plParticleSystem)
 target_link_libraries(plClient plPhysical)
-target_link_libraries(plClient plPhysX)
+#target_link_libraries(plClient plPhysX) # don't build physx into the client
 target_link_libraries(plClient plPipeline)
 target_link_libraries(plClient plProgressMgr)
 target_link_libraries(plClient plResMgr)

@@ -50,7 +50,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plClientResMgr/plClientResMgr.h"
 #include "plNetClient/plNetClientMgr.h"
-#include "plPhysX/plSimulationMgr.h"
+//#include "plPhysX/plSimulationMgr.h"
+#include "plBullet/plSimulationMgr.h"
 #include "plResMgr/plResManager.h"
 
 static plFileName s_physXSetupExe = "PhysX_Setup.exe";
@@ -59,7 +60,7 @@ static bool InitPhysX()
 {
 #ifdef HS_BUILD_FOR_WIN32
     plSimulationMgr::Init();
-    if (!plSimulationMgr::GetInstance()) {
+    /*if (!plSimulationMgr::GetInstance()) {
         if (plFileInfo(s_physXSetupExe).Exists()) {
             // launch the PhysX installer
             SHELLEXECUTEINFOW info;
@@ -85,7 +86,7 @@ static bool InitPhysX()
     } else {
         hsMessageBox("PhysX install failed. You will not be able to play URU.", "Error", hsMessageBoxNormal, hsMessageBoxIconError);
         return false;
-    }
+    }*/
 #else
     return false;
 #endif // HS_BUILD_FOR_WIN32

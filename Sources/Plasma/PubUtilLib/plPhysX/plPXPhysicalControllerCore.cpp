@@ -155,7 +155,7 @@ public:
     }
 } gControllerHitReport;
 
-plPhysicalControllerCore* plPhysicalControllerCore::Create(plKey ownerSO, float height, float width, bool human)
+/*plPhysicalControllerCore* plPhysicalControllerCore::Create(plKey ownerSO, float height, float width, bool human)
 {
     if (!plPXPhysicalControllerCore::fPXControllersMax || gControllers.size() < plPXPhysicalControllerCore::fPXControllersMax)
     {
@@ -164,7 +164,7 @@ plPhysicalControllerCore* plPhysicalControllerCore::Create(plKey ownerSO, float 
         return new plPXPhysicalControllerCore(ownerSO, realHeight, radius, human);
     }
     return nil;
-}
+}*/
 
 plPXPhysicalControllerCore::plPXPhysicalControllerCore(plKey ownerSO, float height, float radius, bool human)
     : plPhysicalControllerCore(ownerSO, height, radius),

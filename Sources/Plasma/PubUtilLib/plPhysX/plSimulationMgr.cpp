@@ -64,11 +64,11 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #ifndef PLASMA_EXTERNAL_RELEASE
 #include "plPipeline/plDebugText.h"
-bool plSimulationMgr::fDisplayAwakeActors=false;
+//bool plSimulationMgr::fDisplayAwakeActors=false;
 #endif //PLASMA_EXTERNAL_RELEASE
 // This gets called by PhysX whenever a trigger gets penetrated.  This is used
 // for any Plasma detectors.
-class SensorReport : public NxUserTriggerReport
+/*class SensorReport : public NxUserTriggerReport
 {
     virtual void onTrigger(NxShape& triggerShape, NxShape& otherShape, NxTriggerFlag status)
     {
@@ -836,3 +836,4 @@ void plSimulationMgr::IDrawActiveActorList()
     }
 }
 #endif //PLASMA_EXTERNAL_RELEASE
+*/

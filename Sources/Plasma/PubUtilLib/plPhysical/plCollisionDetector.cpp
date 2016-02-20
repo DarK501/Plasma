@@ -71,10 +71,10 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plModifier/plDetectorLog.h"
 
 #ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-#include "plPhysX/plSimulationMgr.h"
+//#include "plPhysX/plSimulationMgr.h"
 #endif
 
-
+#include "plBullet/plSimulationMgr.h"
 
 plArmatureMod* plCollisionDetector::IGetAvatarModifier(plKey key)
 {
@@ -272,9 +272,9 @@ bool plCameraRegionDetector::MsgReceive(plMessage* msg)
 
         fEntering = (pCollMsg->fEntering != 0);
 
- #ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-        fLastStep = plSimulationMgr::GetInstance()->GetStepCount();
-#endif
+//#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
+//       fLastStep = plSimulationMgr::GetInstance()->GetStepCount();
+//#endif
         return true;
     }
 
@@ -303,10 +303,10 @@ void plCameraRegionDetector::Write(hsStream* stream, hsResMgr* mgr)
 
 void plCameraRegionDetector::IHandleEval(plEvalMsg*)
 {
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-    if (plSimulationMgr::GetInstance()->GetStepCount() - fLastStep > 1)
-    {
-#endif
+//#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
+//   if (plSimulationMgr::GetInstance()->GetStepCount() - fLastStep > 1)
+//    {
+//#endif
         if (fIsInside != fEntering)
         {
             fIsInside = fEntering;
@@ -315,9 +315,9 @@ void plCameraRegionDetector::IHandleEval(plEvalMsg*)
         }
         plgDispatch::Dispatch()->UnRegisterForExactType(plEvalMsg::Index(), GetKey());
         fWaitingForEval = false;
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-    }
-#endif
+//#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
+//    }
+//#endif
 }
 
 /////////////////////////////////
@@ -328,7 +328,7 @@ void plCameraRegionDetector::IHandleEval(plEvalMsg*)
 
 void plObjectInVolumeDetector::ITrigger(plKey hitter, bool entering)
 {
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
+/*#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
     for (bookKeepingList::iterator it = fCollisionList.begin(); it != fCollisionList.end(); ++it)
     {
         plCollisionBookKeepingInfo* collisionInfo = *it;
@@ -339,13 +339,13 @@ void plObjectInVolumeDetector::ITrigger(plKey hitter, bool entering)
             return;
         }
     }
-#endif
+#endif*/
 
     plCollisionBookKeepingInfo* collisionInfo = new plCollisionBookKeepingInfo(hitter, entering);
     fCollisionList.push_back(collisionInfo);
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
+/*#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
     collisionInfo->fLastStep = plSimulationMgr::GetInstance()->GetStepCount();
-#endif
+#endif*/
 }
 
 void plObjectInVolumeDetector::IRegisterForEval()
@@ -404,10 +404,10 @@ void plObjectInVolumeDetector::IHandleEval(plEvalMsg*)
     while (it != fCollisionList.end())
     {
         plCollisionBookKeepingInfo* collisionInfo = *it;
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
+/*#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
         if (plSimulationMgr::GetInstance()->GetStepCount() - collisionInfo->fLastStep > 1)
         {
-#endif // USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
+#endif*/ // USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
             ResidentSet::iterator j = fCurrentResidents.find(collisionInfo->fHitter);
             bool wasInside = j != fCurrentResidents.end();
             if (collisionInfo->fEntering != wasInside)
@@ -427,16 +427,16 @@ void plObjectInVolumeDetector::IHandleEval(plEvalMsg*)
             }
 
             delete collisionInfo;
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
+/*#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
             it = fCollisionList.erase(it);
         }
         else
         {
             ++it;
         }
-#else
+#else*/
             ++it;
-#endif // USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
+//#endif // USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
     }
 }
 

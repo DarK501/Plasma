@@ -33,44 +33,39 @@ the parts of OpenSSL and IJG JPEG Library used as well as that of the covered
 work.
 
 You can contact Cyan Worlds, Inc. by email legal@cyan.com
- or by snail mail at:
-      Cyan Worlds, Inc.
-      14617 N Newport Hwy
-      Mead, WA   99021
+or by snail mail at:
+Cyan Worlds, Inc.
+14617 N Newport Hwy
+Mead, WA   99021
 
 *==LICENSE==*/
+#ifndef plBTCreatable_inc
+#define plBTCreatable_inc
 
-#ifndef plAllCreatables_inc
-#define plAllCreatables_inc
+#include "pnFactory/plCreator.h"
 
-#include "plGImage/plGImageCreatable.h"
-#include "plGLight/plGLightCreatable.h"
-#include "plInterp/plInterpCreatable.h"
-#include "plInputCore/plInputCoreCreatable.h"
-#include "plPipeline/plPipelineCreatable.h"
-#include "plResMgr/plResMgrCreatable.h"
-#include "plSurface/plSurfaceCreatable.h"
-#include "plNetClient/plNetClientCreatable.h"
-#include "plNetClientComm/plNetClientCommCreatable.h"
-#include "plMessage/plMessageCreatable.h"
-#include "plAudible/plAudibleCreatable.h"
-#include "plDrawable/plDrawableCreatable.h"
-#include "plPhysical/plPhysicalCreatable.h"
-#include "plModifier/plModifierCreatable.h"
-#include "plScene/plSceneCreatable.h"
-//#include "plPhysX/plPhysXCreatable.h"
-#include "plBullet/plBTCreatable.h"
-#include "plAudio/plAudioCreatable.h"
-#include "plAudioCore/plAudioCoreCreatable.h"
-#include "plParticleSystem/plParticleCreatable.h"
-#include "plNetCommon/plNetCommonCreatable.h"
-#include "plVault/plVaultCreatable.h"
-#include "plAnimation/plAnimationCreatable.h"
-#include "plAvatar/plAvatarCreatable.h"
-#include "plIntersect/plIntersectCreatable.h"
-#include "plNetMessage/plNetMessageCreatable.h"
-#include "plStatGather/plStatGatherCreatable.h"
-#include "plSDL/plSDLCreatable.h"
-#include "plAgeLoader/plAgeLoaderCreatable.h"
+#include "plBTPhysical.h"
 
-#endif // plAllCreatables_inc
+REGISTER_CREATABLE(plBTPhysical);
+
+//#include "plHKSimulationSynchMsg.h"
+//REGISTER_CREATABLE(plHKSimulationSynchMsg);
+
+//#include "plHavokConstraintTools.h"
+//REGISTER_NONCREATABLE(plHavokConstraintsMod);
+//REGISTER_CREATABLE(plHingeConstraintMod);
+//REGISTER_CREATABLE(plStrongSpringConstraintMod);
+//REGISTER_CREATABLE(plWheelConstraintMod);
+
+
+//#include "plLOSDispatch.h"
+//REGISTER_CREATABLE(plLOSDispatch);
+
+#include "plSimulationMgr.h"
+REGISTER_CREATABLE(plSimulationMgr);
+
+//#include "plVehicleModifier.h"
+//REGISTER_CREATABLE(plVehicleModifier);
+
+
+#endif // plPhysXCreatable_inc

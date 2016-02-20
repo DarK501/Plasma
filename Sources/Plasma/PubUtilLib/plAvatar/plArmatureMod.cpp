@@ -1992,8 +1992,8 @@ bool plArmatureMod::ValidatePhysics()
     if (!fController) // don't actually bother creating it as there should be no physics engine
     {
         // The kinematic actor is made taller if the avatar is human (male or female)
-        //fController = plPhysicalControllerCore::Create(GetTarget(0)->GetKey(), fPhysHeight,
-        //              fPhysWidth, (fBodyType == kBoneBaseMale || fBodyType == kBoneBaseFemale));
+        fController = plPhysicalControllerCore::Create(GetTarget(0)->GetKey(), fPhysHeight,
+                      fPhysWidth, (fBodyType == kBoneBaseMale || fBodyType == kBoneBaseFemale));
     }
 
     if (fController)

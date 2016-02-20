@@ -164,6 +164,11 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plResMgr/plResMgrSettings.h"
 #include "plResMgr/plLocalization.h"
 
+//#include "plPhysX/plSimulationMgr.h"
+//#include "plPhysX/plPXPhysicalControllerCore.h"
+
+#include "plBullet/plSimulationMgr.h"
+#include "plBullet/plBTPhysicalControllerCore.h"
 
 #define PF_SANITY_CHECK( cond, msg ) { if( !( cond ) ) { PrintString( msg ); return; } }
 
@@ -5559,19 +5564,19 @@ PF_CONSOLE_CMD( SceneObject, Detach,            // Group name, Function name
 
 #ifndef LIMIT_CONSOLE_COMMANDS
 
-#include "plPhysX/plPXPhysicalControllerCore.h"
+
 
 PF_CONSOLE_GROUP( Physics )
 
 PF_CONSOLE_CMD( Physics, Rebuild, "", "Rebuilds the avatars collision cache")
 {
-    plPXPhysicalControllerCore::RebuildCache();
+    //plPXPhysicalControllerCore::RebuildCache();
 }
 
 PF_CONSOLE_CMD(Physics, MaxPhysicalAvatars, "int max", "Set the maximum number of avatar physicals allowed. Default = 0 (meaning no limit)")
 {
     int max = params[0];
-    plPXPhysicalControllerCore::SetMaxNumberOfControllers(max);
+    //plPXPhysicalControllerCore::SetMaxNumberOfControllers(max);
 }
 
 /*
@@ -5803,10 +5808,10 @@ PF_CONSOLE_CMD(Physics, LogSDL, "int level", "Turn logging of physics SDL state 
     plPhysicalSDLModifier::SetLogLevel(level);
 }
 
-#include "plPhysX/plSimulationMgr.h"
+
 PF_CONSOLE_CMD(Physics, ExtraProfile, "", "Toggle extra simulation profiling")
 {
-    char str[256];
+    /*char str[256];
     if (plSimulationMgr::fExtraProfile)
     {
         plSimulationMgr::fExtraProfile = false;
@@ -5817,11 +5822,11 @@ PF_CONSOLE_CMD(Physics, ExtraProfile, "", "Toggle extra simulation profiling")
         plSimulationMgr::fExtraProfile = true;
         sprintf(str, "Start extra profiling");
     }
-    PrintString( str );
+    PrintString( str );*/
 }
 PF_CONSOLE_CMD(Physics, SubworldOptimization, "", "Toggle subworld optimization")
 {
-    char str[256];
+    /*char str[256];
     if (plSimulationMgr::fSubworldOptimization)
     {
         plSimulationMgr::fSubworldOptimization = false;
@@ -5833,10 +5838,11 @@ PF_CONSOLE_CMD(Physics, SubworldOptimization, "", "Toggle subworld optimization"
         sprintf(str, "Start subworld optimization");
     }
     PrintString( str );
+	*/
 }
 PF_CONSOLE_CMD(Physics, ClampingOnStep, "", "Toggle whether to clamp the step size on advance")
 {
-    char str[256];
+    /*char str[256];
     if (plSimulationMgr::fDoClampingOnStep)
     {
         plSimulationMgr::fDoClampingOnStep = false;
@@ -5848,6 +5854,7 @@ PF_CONSOLE_CMD(Physics, ClampingOnStep, "", "Toggle whether to clamp the step si
         sprintf(str, "Start clamping the step size");
     }
     PrintString( str );
+	*/
 }
 
 PF_CONSOLE_CMD(Physics, 
@@ -5855,14 +5862,14 @@ PF_CONSOLE_CMD(Physics,
                "", 
                "Toggle the physics controller debug display")
 {
-    plPXPhysicalControllerCore::fDebugDisplay = !plPXPhysicalControllerCore::fDebugDisplay;
+   // plPXPhysicalControllerCore::fDebugDisplay = !plPXPhysicalControllerCore::fDebugDisplay;
 }
 PF_CONSOLE_CMD(Physics, 
                ListAwakeActors,
                "", 
                "Toggles displaying the list of awake actors")
 {
-    plSimulationMgr::fDisplayAwakeActors= !plSimulationMgr::fDisplayAwakeActors;
+    //plSimulationMgr::fDisplayAwakeActors= !plSimulationMgr::fDisplayAwakeActors;
 }
 
 /*

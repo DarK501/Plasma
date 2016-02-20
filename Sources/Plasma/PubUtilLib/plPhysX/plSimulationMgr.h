@@ -55,7 +55,7 @@ class NxScene;
 class plCollideMsg;
 struct hsPoint3;
 
-class plSimulationMgr : public hsKeyedObject
+/*class plPXSimulationMgr : public hsKeyedObject
 {
 public:
     CLASSNAME_REGISTER(plSimulationMgr);
@@ -185,6 +185,6 @@ inline void SimLog(const char *str, ...)
     // will get stripped out
 }
 
-#endif
+#endif*/
 
 #endif

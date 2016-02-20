@@ -114,7 +114,7 @@ CLASS_INDEX_LIST_START
     CLASS_INDEX(plPortalPhysical),
     CLASS_INDEX(plSpawnModifier),
     CLASS_INDEX(plFacingConditionalObject),
-    CLASS_INDEX(plPXPhysical),
+    CLASS_INDEX(plPXPhysical), // This was plPXPhysical
     CLASS_INDEX(plViewFaceModifier),
     CLASS_INDEX(plLayerInterface),
     CLASS_INDEX(plLayerWrapper),
@@ -367,6 +367,7 @@ CLASS_INDEX_LIST_START
     CLASS_INDEX(plDynamicCamMap),
     CLASS_INDEX(plRidingAnimatedPhysicalDetector),
     CLASS_INDEX(plVolumeSensorConditionalObjectNoArbitration),
+	CLASS_INDEX(plBTPhysical),
 //---------------------------------------------------------
 // Keyed objects above this line, unkeyed (such as messages) below..
 //---------------------------------------------------------

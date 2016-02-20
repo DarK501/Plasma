@@ -7,10 +7,15 @@ include_directories(${BULLET_INCLUDE_DIRS})
 
 set(plBullet_SOURCES
     plBTPhysicalControllerCore.cpp
+	plSimulationMgr.cpp
 )
 
 set(plBullet_HEADERS
-    plBTPhysicalControllerCore.h
+	plBTCreatable.h
+    plBTPhysical.h
+	plBTPhysicalControllerCore.h
+	plSimulationMgr.h
+	
 )
 
 add_library(plBullet STATIC ${plBullet_SOURCES} ${plBullet_HEADERS})
