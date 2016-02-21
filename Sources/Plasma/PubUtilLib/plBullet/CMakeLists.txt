@@ -7,6 +7,7 @@ include_directories(${BULLET_INCLUDE_DIRS})
 
 set(plBullet_SOURCES
     plBTPhysicalControllerCore.cpp
+	plBTPhysical.cpp
 	plSimulationMgr.cpp
 )
 

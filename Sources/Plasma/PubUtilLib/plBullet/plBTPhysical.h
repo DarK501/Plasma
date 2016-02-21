@@ -71,6 +71,8 @@ protected:
 
 	plSimDefs::Group fGroup;
 	plPhysicalSndGroup* fSndGroup;
+	
+	plKey fSceneNode;
 
 	bool        fWeWereHit;
 	hsVector3   fHitForce;

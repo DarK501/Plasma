@@ -939,7 +939,7 @@ plCreatable* plResManager::IReadCreatable(hsStream* s) const
 
 	plStatusLog::AddLineS("ResManager.log", "hClass :: %d", hClass);
 	
-	if (hClass != 63) {
+	//if (hClass != 63) {
 
 		plCreatable* pCre = plFactory::Create(hClass);
 
@@ -947,10 +947,10 @@ plCreatable* plResManager::IReadCreatable(hsStream* s) const
 			hsAssert(hClass == 0x8000, "Invalid creatable index");
 		
 		return pCre;
-	} else {
+	//} else {
 
-		return false;
-	}
+		//return false;
+	//}
 
 }
 
@@ -961,14 +961,14 @@ plCreatable* plResManager::ReadCreatable(hsStream* s)
 	
 	if (pCre) {
 		plStatusLog::AddLineS("ResManager.log", "ClassIndex :: %d", pCre->ClassIndex());
-		if (pCre->ClassIndex() == 63) { // ignore plPXPhysical objects
-			pCre->Read(s, this); // read the object but don't return it - not reading the object freaks out the ResMgr as it looses its file handler position
-			plStatusLog::AddLineS("ResManager.log", "IReadCreatable :: return false");
-			return false;
-		} else {
+		//if (pCre->ClassIndex() == 63) { // ignore plPXPhysical objects
+		//	pCre->Read(s, this); // read the object but don't return it - not reading the object freaks out the ResMgr as it looses its file handler position
+		//	plStatusLog::AddLineS("ResManager.log", "IReadCreatable :: return false");
+		//	return false;
+		//} else {
 			pCre->Read(s, this);
 			return pCre;
-		}
+		//}
 	}
 }
 

@@ -28,15 +28,22 @@ void plSimulationMgr::Init()
 	}
 }
 
-plSimulationMgr* plSimulationMgr::GetInstance()
-{
-	return gTheInstance;
-}
+
 
 plSimulationMgr::plSimulationMgr()
 	:fLog(nil)
 {
 
+}
+
+plSimulationMgr::~plSimulationMgr() 
+{
+
+}
+
+plSimulationMgr* plSimulationMgr::GetInstance()
+{
+	return gTheInstance;
 }
 
 bool plSimulationMgr::InitSimulation()
@@ -48,6 +55,11 @@ bool plSimulationMgr::InitSimulation()
 
 	return true;
 
+}
+
+void plSimulationMgr::Shutdown() 
+{
+	// Trash the Simulation
 }
 
 btDiscreteDynamicsWorld* plSimulationMgr::GetScene(plKey world)

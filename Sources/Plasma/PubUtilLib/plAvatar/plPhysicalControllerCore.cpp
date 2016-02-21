@@ -60,7 +60,6 @@ static float AngleRad2d(float x1, float y1, float x3, float y3);
 
 bool CompareMatrices(const hsMatrix44 &matA, const hsMatrix44 &matB, float tolerance);
 
-
 // plPhysicalControllerCore
 plPhysicalControllerCore::plPhysicalControllerCore(plKey OwnerSceneObject, float height, float radius)
     : fOwner(OwnerSceneObject),
