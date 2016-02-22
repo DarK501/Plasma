@@ -184,9 +184,9 @@ void plAvBrainHuman::Activate(plArmatureModBase *avMod)
     {
         plSceneObject* avObj = fArmature->GetTarget(0);
         plAGModifier* agMod = const_cast<plAGModifier*>(plAGModifier::ConvertNoRef(FindModifierByClass(avObj, plAGModifier::Index())));
-        //plPhysicalControllerCore* controller = avMod->GetController();
-        //fWalkingStrategy = new plWalkingStrategy(agMod->GetApplicator(kAGPinTransform), controller);
-        //controller->SetMovementStrategy(fWalkingStrategy);
+        plPhysicalControllerCore* controller = avMod->GetController();
+        fWalkingStrategy = new plWalkingStrategy(agMod->GetApplicator(kAGPinTransform), controller);
+        controller->SetMovementStrategy(fWalkingStrategy);
     }
     
     

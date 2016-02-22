@@ -5,8 +5,6 @@
 
 #include "pnSceneObject/plSceneObject.h"
 
-
-
 // bullet includes
 #include "btBulletDynamicsCommon.h"
 
@@ -118,4 +116,10 @@ void plBTPhysicalControllerCore::LeaveAge()
 void plBTPhysicalControllerCore::IHandleEnableChanged() 
 {
 
+}
+
+plDrawableSpans* plBTPhysicalControllerCore::CreateProxy(hsGMaterial* mat, hsTArray<uint32_t>& idx, plDrawableSpans* addTo) {
+
+	//Just return what we are given
+	return addTo;
 }

@@ -33,9 +33,7 @@ add_subdirectory(plNetTransport)
 add_subdirectory(plParticleSystem)
 add_subdirectory(plPhysical)
 add_subdirectory(plBullet)
-if(WIN32)
-#    add_subdirectory(plPhysX) #don't build PhysX libs
-endif()
+
 add_subdirectory(plPipeline)
 add_subdirectory(plProgressMgr)
 add_subdirectory(plResMgr)

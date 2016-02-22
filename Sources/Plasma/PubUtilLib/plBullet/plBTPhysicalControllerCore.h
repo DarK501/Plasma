@@ -32,6 +32,8 @@ public:
 	virtual int SweepControllerPath(const hsPoint3& startPos, const hsPoint3& endPos, bool vsDynamics,
 		bool vsStatics, uint32_t& vsSimGroups, std::vector<plControllerSweepRecord>& hits);
 
+	plDrawableSpans* CreateProxy(hsGMaterial* mat, hsTArray<uint32_t>& idx, plDrawableSpans* addTo);
+
 	virtual void LeaveAge();
 
 protected:
