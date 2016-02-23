@@ -74,7 +74,8 @@ btDiscreteDynamicsWorld* plSimulationMgr::GetScene(plKey world)
 
 	btDiscreteDynamicsWorld* scene = fScenes[world];
 
-	if (!scene) {
+	if (!scene) 
+	{
 
 		btDefaultCollisionConfiguration* collisionConfiguration = new btDefaultCollisionConfiguration();
 		btCollisionDispatcher* dispatcher = new btCollisionDispatcher(collisionConfiguration);
@@ -87,9 +88,8 @@ btDiscreteDynamicsWorld* plSimulationMgr::GetScene(plKey world)
 		scene->setGravity(btVector3(0, 0, -32.174049f)); // these are previous plasma defaults for PhysX and will not be right
 
 		// Defaults for Collision, Materials and other things go here
-
 		fScenes[world] = scene;
 	}
 
-	return scene;
+ 	return fScenes[world];
 }

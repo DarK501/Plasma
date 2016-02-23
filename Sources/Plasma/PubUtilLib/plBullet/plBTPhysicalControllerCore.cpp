@@ -7,6 +7,11 @@
 
 // bullet includes
 #include "btBulletDynamicsCommon.h"
+#include "BulletDynamics/Character/btKinematicCharacterController.h"
+
+#define kCCTSkinWidth 0.1f
+#define kPhysHeightCorrection 0.8f
+#define kAvatarMass 200.0f
 
 static std::vector<plBTPhysicalControllerCore*> gControllers;
 int plBTPhysicalControllerCore::fBTControllersMax = 0;
@@ -46,12 +51,9 @@ void plBTPhysicalControllerCore::ICreateController(const hsPoint3& pos)
 {
 	
 	btDiscreteDynamicsWorld* scene = plSimulationMgr::GetInstance()->GetScene(fWorldKey);
-	
-	scene->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
 
-	//if (fKinematicCCT) {
-		
-		// We are a Kinematic we need to be a Capsule
+	if (fKinematicCCT) {
+		// Add a shape to the exisiting actor?
 		btCollisionShape* desc = new btCapsuleShape( btScalar(fRadius), btScalar(fHeight) );
 		
 		btTransform descTransform;
@@ -67,7 +69,31 @@ void plBTPhysicalControllerCore::ICreateController(const hsPoint3& pos)
 
 		scene->addRigidBody(body);
 
-	//}
+	}
+	else
+	{
+
+		// PhysX previously described the avatar as a Kinematic Controller - this is just a shape for now
+		btCollisionShape* capDesc = new btCapsuleShape(btScalar(fRadius + kCCTSkinWidth), btScalar(fHeight + kPhysHeightCorrection));
+
+		btTransform descTransform;
+		descTransform.setIdentity();
+
+		// figure out if this is how we deal with freezing the object (Gravity and Rotation)?
+		btScalar mass(kAvatarMass);
+		btVector3 localIntertia(0, 0, 0);
+		
+		if (fEnabled) 
+		{
+			capDesc->setUserIndex = plSimDefs::kGroupAvatar;
+		}
+		else
+		{
+			// switch to be Kinematic?
+			capDesc->setUserIndex = plSimDefs::kGroupAvatarKinematic;
+		}
+
+	}
 
 	
 }

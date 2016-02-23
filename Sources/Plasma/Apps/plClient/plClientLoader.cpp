@@ -54,63 +54,29 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plBullet/plSimulationMgr.h"
 #include "plResMgr/plResManager.h"
 
-static plFileName s_physXSetupExe = "PhysX_Setup.exe";
-
-static bool InitPhysX()
+static bool InitBullet()
 {
-#ifdef HS_BUILD_FOR_WIN32
-    plSimulationMgr::Init();
-    /*if (!plSimulationMgr::GetInstance()) {
-        if (plFileInfo(s_physXSetupExe).Exists()) {
-            // launch the PhysX installer
-            SHELLEXECUTEINFOW info;
-            memset(&info, 0, sizeof(info));
-            info.cbSize = sizeof(info);
-            info.lpFile = s_physXSetupExe.AsString().ToWchar();
-            info.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC;
-            ShellExecuteExW(&info);
-
-            // wait for completion
-            WaitForSingleObject(info.hProcess, INFINITE);
-
-            // cleanup
-            CloseHandle(info.hProcess);
-        } else {
-            hsMessageBox("You must install PhysX before you can play URU.", "Error", hsMessageBoxNormal, hsMessageBoxIconError);
-            return false;
-        }
-    }
-    if (plSimulationMgr::GetInstance()) {
-        plSimulationMgr::GetInstance()->Suspend();
-        return true;
-    } else {
-        hsMessageBox("PhysX install failed. You will not be able to play URU.", "Error", hsMessageBoxNormal, hsMessageBoxIconError);
-        return false;
-    }*/
-#else
-    return false;
-#endif // HS_BUILD_FOR_WIN32
+	plSimulationMgr::Init();
+	return true;
 }
 
 void plClientLoader::Run()
 {
-    plResManager *resMgr = new plResManager;
-    resMgr->SetDataPath("dat");
-    hsgResMgr::Init(resMgr);
+	plResManager *resMgr = new plResManager;
+	resMgr->SetDataPath("dat");
+	hsgResMgr::Init(resMgr);
 
-    if (!plFileInfo("resource.dat").Exists()) {
-        hsMessageBox("Required file 'resource.dat' not found.", "Error", hsMessageBoxNormal);
-        return;
-    }
-    plClientResMgr::Instance().ILoadResources("resource.dat");
+	if (!plFileInfo("resource.dat").Exists()) {
+		hsMessageBox("Required file 'resource.dat' not found.", "Error", hsMessageBoxNormal);
+		return;
+	}
+	plClientResMgr::Instance().ILoadResources("resource.dat");
 
-    fClient = new plClient;
-    fClient->SetWindowHandle(fWindow);
-    
-	//if (!InitPhysX() || fClient->InitPipeline() || !fClient->StartInit()) {
-	// Disable SimulationMgr - this should freek out the client
-	if (fClient->InitPipeline() || !fClient->StartInit()) {
-        fClient->SetDone(true);
+	fClient = new plClient;
+	fClient->SetWindowHandle(fWindow);
+	
+	if (!InitBullet() || fClient->InitPipeline() || !fClient->StartInit()) {
+		fClient->SetDone(true);
     }
 }
 

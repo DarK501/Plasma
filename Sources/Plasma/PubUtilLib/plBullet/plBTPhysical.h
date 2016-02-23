@@ -4,7 +4,42 @@
 
 #include "plPhysical/plSimDefs.h"
 
-class PhysRecipe;
+class PhysRecipe
+{
+public:
+	PhysRecipe();
+
+	float mass;
+	float friction;
+	float restitution;
+	plSimDefs::Bounds bounds;
+	plSimDefs::Group group;
+	uint32_t reportsOn;
+	plKey objectKey;
+	plKey sceneNode;
+	plKey worldKey;
+
+	// The local to subworld matrix (or local to world if worldKey is nil)
+	hsMatrix44 l2s;
+
+	// these are the only PhsyX elements we need to convert?
+	//NxConvexMesh* convexMesh;
+	//NxTriangleMesh* triMesh;
+
+	// For spheres only
+	float radius;
+	hsPoint3 offset;
+
+	// For Boxes
+	hsPoint3 bDimensions;
+	hsPoint3 bOffset;
+
+	// For export time only.  The original data used to create the mesh
+	// hsVectorStream* meshStream;
+	// Does this mean that we have the original mesh somewhere that we can then use in bullet?
+};
+
+static void ClearMatrix(hsMatrix44 &m);
 
 class plBTPhysical : public plPhysical
 {
@@ -81,8 +116,6 @@ public:
 	virtual void ExcludeRegionHack(bool cleared);
 
 	virtual float GetMass() { return fMass; }
-
-	static void ClearMatrix(hsMatrix44 &m);
 
 protected:
 
