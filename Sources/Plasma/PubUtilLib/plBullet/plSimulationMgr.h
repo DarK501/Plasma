@@ -22,6 +22,8 @@ public:
 
 	static bool InitSimulation();
 
+	void Advance(float delSecs);
+
 	plSimulationMgr();
 	virtual ~plSimulationMgr();
 

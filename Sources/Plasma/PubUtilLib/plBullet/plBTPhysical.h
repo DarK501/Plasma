@@ -4,16 +4,33 @@
 
 #include "plPhysical/plSimDefs.h"
 
+class PhysRecipe;
+
 class plBTPhysical : public plPhysical
 {
 public:
 	friend class plSimulationMgr;
+
+	enum PhysRefType
+	{
+		kPhysRefWorld,
+		kPhysRefSndGroup
+
+	};
 
 	plBTPhysical();
 	virtual ~plBTPhysical();
 
 	CLASSNAME_REGISTER(plBTPhysical);
 	GETINTERFACE_ANY(plBTPhysical, plPhysical);
+
+	// Export and Internal use only - maybe protect?
+	bool Init(PhysRecipe& recipe);
+
+	virtual void Read(hsStream* s, hsResMgr* mgr);
+	virtual void Write(hsStream* s, hsResMgr* mgr);
+
+	virtual bool MsgReceive(plMessage* msg);
 
 	//
 	// From plPhysical
@@ -65,25 +82,33 @@ public:
 
 	virtual float GetMass() { return fMass; }
 
+	static void ClearMatrix(hsMatrix44 &m);
+
 protected:
 
 	void IGetPositionSim(hsPoint3& pos) const;
 
+	plSimDefs::Bounds fBoundsType;
 	plSimDefs::Group fGroup;
 	plPhysicalSndGroup* fSndGroup;
 	
+	uint32_t fReportsOn;           // bit vector for groups we report interactions with
+	uint16_t fLOSDBs;             // Which LOS databases we get put into
+	hsBitVector fProps;          // plSimulationInterface::plSimulationProperties kept here
+	float   fMass;
+
 	plKey fSceneNode;
+
+	// we need to remember the last matrices we sent to the coordinate interface
+	// so that we can recognize them when we send them back and not reapply them,
+	// which would reactivate our body. inelegant but effective
+	hsMatrix44 fCachedLocal2World;
 
 	bool        fWeWereHit;
 	hsVector3   fHitForce;
 	hsPoint3    fHitPos;
 
-	uint32_t fReportsOn;          // bit vector for groups we report interactions with
-	uint16_t fLOSDBs;             // Which LOS databases we get put into
-	hsBitVector fProps;         // plSimulationInterface::plSimulationProperties kept here
-	float   fMass;
-	
-	plKey fWorldKey;    // either a subworld or nil
+	plKey fWorldKey; // either a subworld or nil
 	plKey fObjectKey;           // the key to our scene object
 
 };

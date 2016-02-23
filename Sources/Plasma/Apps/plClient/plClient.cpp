@@ -1666,9 +1666,9 @@ bool plClient::IUpdate()
         fAnimDebugList->ShowReport();
     
 	// don't update the SimulationMgr
-    //plProfile_BeginTiming(Simulation);
-    //plSimulationMgr::GetInstance()->Advance(delSecs);
-    //plProfile_EndTiming(Simulation);
+    plProfile_BeginTiming(Simulation);
+    plSimulationMgr::GetInstance()->Advance(delSecs);
+    plProfile_EndTiming(Simulation);
             
     // At this point, we just register for a plDelayedTransformMsg when dirtied.
     if (!plCoordinateInterface::GetDelayedTransformsEnabled())

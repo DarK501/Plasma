@@ -3,6 +3,13 @@
 */
 #include "plAvatar/plPhysicalControllerCore.h"
 
+class btRigidBody;
+
+class btDefaultCollisionConfiguration;
+class btCollisionDispatcher;
+class btBroadphaseInterface;
+class btSequentialImpulseConstraintSolver;
+
 class plBTPhysicalControllerCore : public plPhysicalControllerCore
 {
 public:
@@ -36,6 +43,8 @@ public:
 
 	virtual void LeaveAge();
 
+	static int fBTControllersMax;
+
 protected:
 	void ICreateController(const hsPoint3& pos);
 
@@ -43,4 +52,11 @@ protected:
 
 	bool fKinematicCCT;
 	bool fHuman;
+
+	btRigidBody* fActor;
+
+	btDefaultCollisionConfiguration* fCollisionConfig;
+	btCollisionDispatcher* fCollisionDispatch;
+	btBroadphaseInterface* fBroadphaseInt;
+	btSequentialImpulseConstraintSolver* fConstraintSolver;
 };

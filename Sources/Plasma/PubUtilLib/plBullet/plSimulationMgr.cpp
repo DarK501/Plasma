@@ -57,6 +57,10 @@ bool plSimulationMgr::InitSimulation()
 
 }
 
+void plSimulationMgr::Advance(float delSecs) {
+
+}
+
 void plSimulationMgr::Shutdown() 
 {
 	// Trash the Simulation
