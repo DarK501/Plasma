@@ -4,6 +4,9 @@
 
 #include "plPhysical/plSimDefs.h"
 
+class btRigidBody;
+class plPhysicalProxy;
+
 class PhysRecipe
 {
 public:
@@ -125,6 +128,8 @@ protected:
 	plSimDefs::Group fGroup;
 	plPhysicalSndGroup* fSndGroup;
 	
+	btRigidBody* fActor;
+
 	uint32_t fReportsOn;           // bit vector for groups we report interactions with
 	uint16_t fLOSDBs;             // Which LOS databases we get put into
 	hsBitVector fProps;          // plSimulationInterface::plSimulationProperties kept here
@@ -143,5 +148,7 @@ protected:
 
 	plKey fWorldKey; // either a subworld or nil
 	plKey fObjectKey;           // the key to our scene object
+
+	plPhysicalProxy* fProxyGen; // visual proxy for debug
 
 };

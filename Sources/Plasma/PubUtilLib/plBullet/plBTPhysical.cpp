@@ -8,16 +8,17 @@
 
 #include "plPhysical/plPhysicalSndGroup.h"
 
-#include "BulletCollision/CollisionShapes/btCompoundShape.h"
-#include "BulletCollision/CollisionShapes/btSphereShape.h"
-#include "BulletCollision/CollisionShapes/btConvexShape.h"
-//#include "BulletCollision/CollisionShapes/btTriangleMeshShape.h"
-#include "BulletCollision/CollisionShapes/btBoxShape.h"
+#include "btBulletDynamicsCommon.h"
 
 #include "hsStream.h"
 #include "hsBitVector.h"
 #include "hsMatrix44.h"
 #include "hsQuat.h"
+
+#include "plPhysical/plPhysicalProxy.h"
+#include "plDrawable/plDrawableGenerator.h"
+#include "plSurface/hsGMaterial.h"      // For our proxy
+#include "plSurface/plLayerInterface.h" // For our proxy
 
 PhysRecipe::PhysRecipe()
 	: mass(0.f)
@@ -118,6 +119,15 @@ void plBTPhysical::Read(hsStream* stream, hsResMgr* mgr)
 	}
 
 	Init(recipe);
+
+	hsColorRGBA physColor;
+	float opac = 1.0f;
+
+	physColor.Set(.2f, .1f, .2f, 1.f);
+	opac = 1.0f;
+
+	fProxyGen = new plPhysicalProxy(hsColorRGBA().Set(0, 0, 0, 1.f), physColor, opac);
+	fProxyGen->Init(this);
 }
 
 bool plBTPhysical::Init(PhysRecipe& recipe)
@@ -138,7 +148,8 @@ bool plBTPhysical::Init(PhysRecipe& recipe)
 	NxTriangleMeshShapeDesc trimeshShapeDesc;
 	NxBoxShapeDesc boxDesc;*/
 
-	btCompoundShape* actorDesc; // maybe??
+	btCompoundShape* actorDesc = new btCompoundShape();
+
 	btSphereShape* sphereDesc;
 	btConvexShape* convexShapeDesc;
 	//btTriangleMeshShape* trimeshShapeDesc;
@@ -156,10 +167,68 @@ bool plBTPhysical::Init(PhysRecipe& recipe)
 
 			sphereDesc->setUnscaledRadius(btScalar(recipe.radius));
 			sphereDesc->setUserIndex(fGroup);
-			
+			boxDesc->setUserPointer(boxDesc);
+
 			// need to make the transform to add to the child group ??
 		}
+		break;
+
+		case plSimDefs::kBoxBounds:
+		{
+			// Set Box Dimensions - these might already be in halfs??
+			btBoxShape* boxDesc = new btBoxShape(btVector3((recipe.bDimensions.fX / 2.f), (recipe.bDimensions.fY / 2.f) , (recipe.bDimensions.fZ / 2.f)));
+
+			// and pose
+			hsMatrix44 boxL2W;
+			boxL2W.Reset();
+			boxL2W.SetTranslate(&recipe.bOffset);
+
+			btTransform descTransform;
+			descTransform.setIdentity();
+			// this will eventually set the pose needed
+			//descTransform.setBasis() 
+
+			boxDesc->setUserIndex(fGroup);
+			//boxDesc->setUserPointer(boxDesc); // set a reference we can use later
+
+			actorDesc->addChildShape(descTransform, boxDesc);
+		}
 	}
+
+	//build the scenes default state
+	btTransform sceneTransform;
+	sceneTransform.setIdentity();
+	sceneTransform.setOrigin(btVector3(0, 0, 0));
+
+	btScalar mass(0.);
+	btVector3 localInertia(0, 0, 0);
+
+	// Apply it to the actor
+	actorDesc->calculateLocalInertia(mass, localInertia);
+
+	// grab the current scene so that we can do things with it
+	btDiscreteDynamicsWorld* scene = plSimulationMgr::GetInstance()->GetScene(fWorldKey);
+
+	try {
+		// creating the actor
+		btDefaultMotionState* motionState = new btDefaultMotionState(sceneTransform);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, actorDesc, localInertia);
+		btRigidBody* rigidBody = new btRigidBody(rbInfo);
+
+		// bullet cleans up after you add this to the scene, so copy the object to keep hold of it
+		fActor = rigidBody;
+
+		scene->addRigidBody(fActor);
+	}
+	catch (...)
+	{
+		hsAssert(false, "Actor Creation crashed");
+	}
+
+	hsAssert(fActor, "Actor creation failed");
+	if (!fActor)
+		return false;
+
 
 	return true;
 }
@@ -292,6 +361,28 @@ void plBTPhysical::IGetPositionSim(hsPoint3& pos) const
 
 plDrawableSpans* plBTPhysical::CreateProxy(hsGMaterial* mat, hsTArray<uint32_t>& idx, plDrawableSpans* addTo)
 {
-	plDrawableSpans* myDraw = addTo;
-	return myDraw;
+	plDrawableSpans* draw = addTo;
+	hsMatrix44 l2w, unused;
+	GetTransform(l2w, unused);
+
+	bool blended = ((mat->GetLayer(0)->GetBlendFlags() & hsGMatState::kBlendMask));
+
+	btCollisionShape* shape = fActor->getCollisionShape();
+
+	if (shape->getShapeType())
+	{
+		btBoxShape* boxDesc = static_cast<btBoxShape *>(shape);
+		if (boxDesc)
+		{
+			// Get Bullet Scale
+			btVector3 bDim = boxDesc->getLocalScaling();
+
+			draw = plDrawableGenerator::GenerateBoxDrawable(bDim.x(), bDim.y(), bDim.z(), mat, l2w, blended, nil, &idx, draw);
+
+			// could likely also add the bullet stuff here for the engine debug??
+
+		}
+	}
+
+	return draw;
 }

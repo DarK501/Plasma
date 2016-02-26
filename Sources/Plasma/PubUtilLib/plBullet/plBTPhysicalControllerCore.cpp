@@ -9,6 +9,10 @@
 #include "btBulletDynamicsCommon.h"
 #include "BulletDynamics/Character/btKinematicCharacterController.h"
 
+#include "plDrawable/plDrawableGenerator.h"
+#include "plSurface/hsGMaterial.h"      // For our proxy
+#include "plSurface/plLayerInterface.h" // For our proxy
+
 #define kCCTSkinWidth 0.1f
 #define kPhysHeightCorrection 0.8f
 #define kAvatarMass 200.0f
@@ -85,12 +89,14 @@ void plBTPhysicalControllerCore::ICreateController(const hsPoint3& pos)
 		
 		if (fEnabled) 
 		{
-			capDesc->setUserIndex = plSimDefs::kGroupAvatar;
+			capDesc->setUserIndex(plSimDefs::kGroupAvatar);
+			capDesc->setUserPointer(this);
 		}
 		else
 		{
 			// switch to be Kinematic?
-			capDesc->setUserIndex = plSimDefs::kGroupAvatarKinematic;
+			capDesc->setUserIndex(plSimDefs::kGroupAvatarKinematic);
+			capDesc->setUserPointer(this);
 		}
 
 	}
@@ -182,6 +188,13 @@ void plBTPhysicalControllerCore::IHandleEnableChanged()
 
 plDrawableSpans* plBTPhysicalControllerCore::CreateProxy(hsGMaterial* mat, hsTArray<uint32_t>& idx, plDrawableSpans* addTo) {
 
+	plDrawableSpans* draw = addTo;
+	
+	bool blended = ((mat->GetLayer(0)->GetBlendFlags() & hsGMatState::kBlendMask));
+	float radius = fRadius;
+
+	draw = plDrawableGenerator::GenerateSphericalDrawable(fLocalPosition, radius, mat, fLastGlobalLoc, blended, nil, &idx, draw);
+	
 	//Just return what we are given
-	return addTo;
+	return draw;
 }
