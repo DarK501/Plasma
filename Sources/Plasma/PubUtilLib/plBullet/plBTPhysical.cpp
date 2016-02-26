@@ -5,8 +5,11 @@
 
 #include "plSimulationMgr.h"
 #include "pnMessage/plNodeRefMsg.h"
-
 #include "plPhysical/plPhysicalSndGroup.h"
+
+#include "plMessage/plSimStateMsg.h"
+#include "plMessage/plLinearVelocityMsg.h"
+#include "plMessage/plAngularVelocityMsg.h"
 
 #include "btBulletDynamicsCommon.h"
 
@@ -14,6 +17,9 @@
 #include "hsBitVector.h"
 #include "hsMatrix44.h"
 #include "hsQuat.h"
+
+#include "pnSceneObject/plSimulationInterface.h"
+#include "pnSceneObject/plCoordinateInterface.h"
 
 #include "plPhysical/plPhysicalProxy.h"
 #include "plDrawable/plDrawableGenerator.h"
@@ -41,13 +47,13 @@ PhysRecipe::PhysRecipe()
 
 plBTPhysical::plBTPhysical()
 	: //fSDLMod(nil)
-	  //, fActor(nil)
-	fBoundsType(plSimDefs::kBoundsMax)
+	fActor(nil)
+	, fBoundsType(plSimDefs::kBoundsMax)
 	, fLOSDBs(plSimDefs::kLOSDBNone)
 	, fGroup(plSimDefs::kGroupMax)
 	, fReportsOn(0)
 	//, fLastSyncTime(0.0f)
-	//, fProxyGen(nil)
+	, fProxyGen(nil)
 	, fSceneNode(nil)
 	, fWorldKey(nil)
 	, fSndGroup(nil)
@@ -61,6 +67,9 @@ plBTPhysical::plBTPhysical()
 
 plBTPhysical::~plBTPhysical() {
 
+	//plSimulationMgr::Log("Destroying physcial %s", GetKeyName().c_str());
+
+	delete fProxyGen;
 }
 
 void plBTPhysical::Read(hsStream* stream, hsResMgr* mgr) 
@@ -123,11 +132,13 @@ void plBTPhysical::Read(hsStream* stream, hsResMgr* mgr)
 	hsColorRGBA physColor;
 	float opac = 1.0f;
 
-	physColor.Set(.2f, .1f, .2f, 1.f);
+	physColor.Set(1.f, 0.f, 0.f, 1.f);
 	opac = 1.0f;
+
 
 	fProxyGen = new plPhysicalProxy(hsColorRGBA().Set(0, 0, 0, 1.f), physColor, opac);
 	fProxyGen->Init(this);
+		
 }
 
 bool plBTPhysical::Init(PhysRecipe& recipe)
@@ -141,12 +152,6 @@ bool plBTPhysical::Init(PhysRecipe& recipe)
 	fObjectKey = recipe.objectKey;
 	fSceneNode = recipe.sceneNode;
 	fWorldKey = recipe.worldKey;
-
-	/*NxActorDesc actorDesc;
-	NxSphereShapeDesc sphereDesc;
-	NxConvexShapeDesc convexShapeDesc;
-	NxTriangleMeshShapeDesc trimeshShapeDesc;
-	NxBoxShapeDesc boxDesc;*/
 
 	btCompoundShape* actorDesc = new btCompoundShape();
 
@@ -238,10 +243,92 @@ void plBTPhysical::Write(hsStream* stream, hsResMgr* mgr)
 
 }
 
+bool plBTPhysical::HandleRefMsg(plGenRefMsg* refMsg)
+{
+	uint8_t refCtxt = refMsg->GetContext();
+	plKey refKey = refMsg->GetRef()->GetKey();
+	plKey ourKey = GetKey();
+	PhysRefType refType = PhysRefType(refMsg->fType);
+
+	plString refKeyName = refKey ? refKey->GetName() : "MISSING";
+
+	if (refType == kPhysRefWorld)
+	{
+		if (refCtxt == plRefMsg::kOnCreate || refCtxt == plRefMsg::kOnRequest)
+		{
+			IGetTransformGlobal(fCachedLocal2World);
+		}
+		if (refCtxt == plRefMsg::kOnDestroy)
+		{
+			// our world was deleted from under us: move to main world
+			hsAssert(0, "Lost World");
+		}
+	}
+	else if (refType == kPhysRefSndGroup)
+	{
+		switch(refCtxt)
+		{
+		case plRefMsg::kOnCreate:
+		case plRefMsg::kOnRequest:
+			fSndGroup = plPhysicalSndGroup::ConvertNoRef(refMsg->GetRef());
+			break;
+		case plRefMsg::kOnDestroy:
+			fSndGroup = nil;
+			break;
+		}
+	}
+	else 
+	{
+		hsAssert(0, "Unknown ref type, who sent this?");
+	}
+
+	return true;
+
+}
+
+void plBTPhysical::IGetTransformGlobal(hsMatrix44& l2w) const
+{
+	if (fWorldKey)
+	{
+		plSceneObject* so = plSceneObject::ConvertNoRef(fWorldKey->ObjectIsLoaded());
+		hsAssert(so, "SceneObject not loaded while accessing subworld.");
+		if (so->GetCoordinateInterface())
+		{
+			const hsMatrix44& s2w = so->GetCoordinateInterface()->GetLocalToWorld();
+			l2w = s2w * l2w;
+				
+		}
+
+	}
+}
+
 bool plBTPhysical::MsgReceive(plMessage* msg) 
 {
-	// Send this down let plPhysical deal with it
-	return plPhysical::MsgReceive(msg);
+	if (plGenRefMsg *refM = plGenRefMsg::ConvertNoRef(msg))
+	{
+		return HandleRefMsg(refM);
+	}
+	else if (plSimulationMsg *simM = plSimulationMsg::ConvertNoRef(msg))
+	{
+		plLinearVelocityMsg* velMsg = plLinearVelocityMsg::ConvertNoRef(msg);
+		if (velMsg)
+		{
+			SetLinearVelocitySim(velMsg->Velocity());
+			return true;
+		}
+		plAngularVelocityMsg* angvelMsg = plAngularVelocityMsg::ConvertNoRef(msg);
+		if (angvelMsg)
+		{
+			SetAngularVelocitySim(angvelMsg->AngularVelocity());
+			return true;
+		}
+
+
+		return false;
+	}
+	// couldn't find a local handler: pass to the base
+	else
+		return plPhysical::MsgReceive(msg);
 }
 
 plPhysical& plBTPhysical::SetProperty(int prop, bool b) 

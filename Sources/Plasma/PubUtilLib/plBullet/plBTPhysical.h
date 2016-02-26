@@ -6,6 +6,9 @@
 
 class btRigidBody;
 class plPhysicalProxy;
+class plSceneObject;
+class plGenRefMsg;
+class plSimulationMgr;
 
 class PhysRecipe
 {
@@ -53,7 +56,6 @@ public:
 	{
 		kPhysRefWorld,
 		kPhysRefSndGroup
-
 	};
 
 	plBTPhysical();
@@ -123,6 +125,12 @@ public:
 protected:
 
 	void IGetPositionSim(hsPoint3& pos) const;
+
+	// Deal with messages about our references
+	bool HandleRefMsg(plGenRefMsg* refM);
+
+	void IGetTransformGlobal(hsMatrix44 &l2w) const;
+	void ISetTransformGlobal(const hsMatrix44& l2w);
 
 	plSimDefs::Bounds fBoundsType;
 	plSimDefs::Group fGroup;
