@@ -26,6 +26,42 @@
 #include "plSurface/hsGMaterial.h"      // For our proxy
 #include "plSurface/plLayerInterface.h" // For our proxy
 
+//#include "plBTPhysicalControllerCore.h"
+
+// From plPhysicalControllerCore - maybe add these to hsMatrix44?
+bool CompareMatrices(const hsMatrix44 &matA, const hsMatrix44 &matB, float tolerance)
+{
+	return
+		(fabs(matA.fMap[0][0] - matB.fMap[0][0]) < tolerance) &&
+		(fabs(matA.fMap[0][1] - matB.fMap[0][1]) < tolerance) &&
+		(fabs(matA.fMap[0][2] - matB.fMap[0][2]) < tolerance) &&
+		(fabs(matA.fMap[0][3] - matB.fMap[0][3]) < tolerance) &&
+
+		(fabs(matA.fMap[1][0] - matB.fMap[1][0]) < tolerance) &&
+		(fabs(matA.fMap[1][1] - matB.fMap[1][1]) < tolerance) &&
+		(fabs(matA.fMap[1][2] - matB.fMap[1][2]) < tolerance) &&
+		(fabs(matA.fMap[1][3] - matB.fMap[1][3]) < tolerance) &&
+
+		(fabs(matA.fMap[2][0] - matB.fMap[2][0]) < tolerance) &&
+		(fabs(matA.fMap[2][1] - matB.fMap[2][1]) < tolerance) &&
+		(fabs(matA.fMap[2][2] - matB.fMap[2][2]) < tolerance) &&
+		(fabs(matA.fMap[2][3] - matB.fMap[2][3]) < tolerance) &&
+
+		(fabs(matA.fMap[3][0] - matB.fMap[3][0]) < tolerance) &&
+		(fabs(matA.fMap[3][1] - matB.fMap[3][1]) < tolerance) &&
+		(fabs(matA.fMap[3][2] - matB.fMap[3][2]) < tolerance) &&
+		(fabs(matA.fMap[3][3] - matB.fMap[3][3]) < tolerance);
+}
+
+static void ClearMatrix(hsMatrix44 &m)
+{
+	m.fMap[0][0] = 0.0f; m.fMap[0][1] = 0.0f; m.fMap[0][2] = 0.0f; m.fMap[0][3] = 0.0f;
+	m.fMap[1][0] = 0.0f; m.fMap[1][1] = 0.0f; m.fMap[1][2] = 0.0f; m.fMap[1][3] = 0.0f;
+	m.fMap[2][0] = 0.0f; m.fMap[2][1] = 0.0f; m.fMap[2][2] = 0.0f; m.fMap[2][3] = 0.0f;
+	m.fMap[3][0] = 0.0f; m.fMap[3][1] = 0.0f; m.fMap[3][2] = 0.0f; m.fMap[3][3] = 0.0f;
+	m.NotIdentity();
+}
+
 PhysRecipe::PhysRecipe()
 	: mass(0.f)
 	, friction(0.f)
@@ -77,6 +113,8 @@ void plBTPhysical::Read(hsStream* stream, hsResMgr* mgr)
 	// so some poor sod is eventually going to have to convert all the ages to a bullet format
 	// I'm not that person, so for now we are going to read in what data we have and make do.
 	plPhysical::Read(stream, mgr);
+	
+	// Maybe add the Clear function to hsMatrix44?
 	ClearMatrix(fCachedLocal2World);
 
 	PhysRecipe recipe;
@@ -104,7 +142,7 @@ void plBTPhysical::Read(hsStream* stream, hsResMgr* mgr)
 	
 	pos.Read(stream);
 	rot.Read(stream);
-	
+
 	rot.MakeMatrix(&recipe.l2s);
 
 	recipe.l2s.SetTranslate(&pos);
@@ -162,6 +200,29 @@ bool plBTPhysical::Init(PhysRecipe& recipe)
 
 	// previously we converted to a PhysX matrix here - but for now I'm assuming bullet will be able to deal with the data comming in
 
+	btTransform descTransform;
+	descTransform.setIdentity();
+
+	// and pose
+	hsMatrix44 boxL2W;
+	boxL2W.Reset();
+	boxL2W.SetTranslate(&recipe.bOffset);
+
+	descTransform.setOrigin(btVector3(recipe.l2s.fMap[0][4], recipe.l2s.fMap[1][4], recipe.l2s.fMap[2][4]));
+
+	fMass = recipe.mass;
+
+	btScalar mass(0.);
+	btVector3 localInertia(0, 0, 0);
+
+	if (fMass != 0) {
+
+		btScalar mass(fMass);
+		btVector3 localInertia(0, 0, 0); //?
+
+		actorDesc->calculateLocalInertia(mass, localInertia);
+	}
+
 	switch (fBoundsType)
 	{
 		case plSimDefs::kSphereBounds:
@@ -181,44 +242,24 @@ bool plBTPhysical::Init(PhysRecipe& recipe)
 		case plSimDefs::kBoxBounds:
 		{
 			// Set Box Dimensions - these might already be in halfs??
-			btBoxShape* boxDesc = new btBoxShape(btVector3((recipe.bDimensions.fX / 2.f), (recipe.bDimensions.fY / 2.f) , (recipe.bDimensions.fZ / 2.f)));
-
-			// and pose
-			hsMatrix44 boxL2W;
-			boxL2W.Reset();
-			boxL2W.SetTranslate(&recipe.bOffset);
-
-			btTransform descTransform;
-			descTransform.setIdentity();
-			// this will eventually set the pose needed
-			//descTransform.setBasis() 
-
+			btBoxShape* boxDesc = new btBoxShape(btVector3((recipe.bDimensions.fX) * 0.5f, (recipe.bDimensions.fY) * 0.5f, (recipe.bDimensions.fZ) * 0.5f));
 			boxDesc->setUserIndex(fGroup);
-			//boxDesc->setUserPointer(boxDesc); // set a reference we can use later
-
 			actorDesc->addChildShape(descTransform, boxDesc);
 		}
-	}
+	}	
 
-	//build the scenes default state
-	btTransform sceneTransform;
-	sceneTransform.setIdentity();
-	sceneTransform.setOrigin(btVector3(0, 0, 0));
-
-	btScalar mass(0.);
-	btVector3 localInertia(0, 0, 0);
-
-	// Apply it to the actor
-	actorDesc->calculateLocalInertia(mass, localInertia);
-
-	// grab the current scene so that we can do things with it
 	btDiscreteDynamicsWorld* scene = plSimulationMgr::GetInstance()->GetScene(fWorldKey);
 
+	// grab the current scene so that we can do things with it
+	
 	try {
 		// creating the actor
-		btDefaultMotionState* motionState = new btDefaultMotionState(sceneTransform);
+		btDefaultMotionState* motionState = new btDefaultMotionState();
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, actorDesc, localInertia);
 		btRigidBody* rigidBody = new btRigidBody(rbInfo);
+
+		rigidBody->setCollisionFlags(rigidBody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+		rigidBody->setActivationState(DISABLE_DEACTIVATION);
 
 		// bullet cleans up after you add this to the scene, so copy the object to keep hold of it
 		fActor = rigidBody;
@@ -234,6 +275,15 @@ bool plBTPhysical::Init(PhysRecipe& recipe)
 	if (!fActor)
 		return false;
 
+	// Message engine to say we have a new physical
+	plNodeRefMsg* refMsg = new plNodeRefMsg(fSceneNode, plRefMsg::kOnCreate, -1, plNodeRefMsg::kPhysical);
+	hsgResMgr::ResMgr()->AddViaNotify(GetKey(), refMsg, plRefFlags::kActiveRef);
+
+	if (fWorldKey)
+	{
+		plGenRefMsg* ref = new plGenRefMsg(GetKey(), plRefMsg::kOnCreate, 0, kPhysRefWorld);
+		hsgResMgr::ResMgr()->AddViaNotify(fWorldKey, ref, plRefFlags::kActiveRef);
+	}
 
 	return true;
 }
@@ -302,6 +352,43 @@ void plBTPhysical::IGetTransformGlobal(hsMatrix44& l2w) const
 	}
 }
 
+void plBTPhysical::ISetTransformGlobal(const hsMatrix44& l2w) 
+{
+	
+	hsAssert(fActor->isStaticObject(), "Should not move a static Actor");
+
+	if (fActor->isKinematicObject())
+		fActor->activate(); // start the Kinematics
+
+	if (fWorldKey)
+	{
+		plSceneObject* so = plSceneObject::ConvertNoRef(fWorldKey->ObjectIsLoaded());
+		hsAssert(so, "Scene object not loaded while accessing subworld");
+		hsMatrix44 p2s = so->GetCoordinateInterface()->GetWorldToLocal() * l2w; //Translation?!
+		
+		// transform the proxy
+		if (fProxyGen)
+		{
+			hsMatrix44 w2l;
+			p2s.GetInverse(&w2l);
+			fProxyGen->SetTransform(p2s, w2l);
+		}
+
+	}
+	else
+	{
+		if (fProxyGen)
+		{
+			hsMatrix44 w2l;
+			l2w.GetInverse(&w2l);
+			fProxyGen->SetTransform(l2w, w2l);
+		}
+	}
+
+	// there was a physX hack here for breaking Kinematics
+
+}
+
 bool plBTPhysical::MsgReceive(plMessage* msg) 
 {
 	if (plGenRefMsg *refM = plGenRefMsg::ConvertNoRef(msg))
@@ -338,7 +425,18 @@ plPhysical& plBTPhysical::SetProperty(int prop, bool b)
 
 void plBTPhysical::SetSceneNode(plKey newNode)
 {
-	
+	plKey oldNode = GetSceneNode();
+	if (oldNode == newNode)
+		return;
+
+	if (newNode)
+	{
+		plNodeRefMsg* refMsg = new plNodeRefMsg(newNode, plNodeRefMsg::kOnRequest, -1, plNodeRefMsg::kPhysical);
+		hsgResMgr::ResMgr()->SendRef(GetKey(), refMsg, plRefFlags::kActiveRef);
+	}
+
+	if (oldNode)
+		oldNode->Release(GetKey());
 }
 
 plKey plBTPhysical::GetSceneNode() const
@@ -373,12 +471,23 @@ void plBTPhysical::SetAngularVelocitySim(const hsVector3& vel)
 
 void plBTPhysical::SetTransform(const hsMatrix44& l2w, const hsMatrix44& w2l, bool force)
 {
-
+	if (force || (fActor->getCollisionFlags()|btCollisionObject::CF_KINEMATIC_OBJECT)
+		&& (fWorldKey || !CompareMatrices(l2w, fCachedLocal2World, .0001f)))
+	{
+		ISetTransformGlobal(l2w);
+		//plProfile_Inc(SetTransforms); - increase profiler stats
+	}
+	else
+	{
+		if (!(fActor->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT) && plSimulationMgr::fExtraProfile)
+			hsAssert("Setting transform on non-dynamic: %s.", GetKeyName().c_str());
+	}
 }
 
 void plBTPhysical::GetTransform(hsMatrix44& l2w, hsMatrix44& w2l)
 {
-
+	IGetTransformGlobal(l2w);
+	l2w.GetInverse(&w2l);
 }
 
 void plBTPhysical::ApplyHitForce()
@@ -402,40 +511,6 @@ void plBTPhysical::ExcludeRegionHack(bool cleared)
 
 }
 
-// From plPhysicalControllerCore - maybe clear these up to their own file at some point
-bool CompareMatrices(const hsMatrix44 &matA, const hsMatrix44 &matB, float tolerance)
-{
-	return
-		(fabs(matA.fMap[0][0] - matB.fMap[0][0]) < tolerance) &&
-		(fabs(matA.fMap[0][1] - matB.fMap[0][1]) < tolerance) &&
-		(fabs(matA.fMap[0][2] - matB.fMap[0][2]) < tolerance) &&
-		(fabs(matA.fMap[0][3] - matB.fMap[0][3]) < tolerance) &&
-
-		(fabs(matA.fMap[1][0] - matB.fMap[1][0]) < tolerance) &&
-		(fabs(matA.fMap[1][1] - matB.fMap[1][1]) < tolerance) &&
-		(fabs(matA.fMap[1][2] - matB.fMap[1][2]) < tolerance) &&
-		(fabs(matA.fMap[1][3] - matB.fMap[1][3]) < tolerance) &&
-
-		(fabs(matA.fMap[2][0] - matB.fMap[2][0]) < tolerance) &&
-		(fabs(matA.fMap[2][1] - matB.fMap[2][1]) < tolerance) &&
-		(fabs(matA.fMap[2][2] - matB.fMap[2][2]) < tolerance) &&
-		(fabs(matA.fMap[2][3] - matB.fMap[2][3]) < tolerance) &&
-
-		(fabs(matA.fMap[3][0] - matB.fMap[3][0]) < tolerance) &&
-		(fabs(matA.fMap[3][1] - matB.fMap[3][1]) < tolerance) &&
-		(fabs(matA.fMap[3][2] - matB.fMap[3][2]) < tolerance) &&
-		(fabs(matA.fMap[3][3] - matB.fMap[3][3]) < tolerance);
-}
-
-static void ClearMatrix(hsMatrix44 &m)
-{
-	m.fMap[0][0] = 0.0f; m.fMap[0][1] = 0.0f; m.fMap[0][2] = 0.0f; m.fMap[0][3] = 0.0f;
-	m.fMap[1][0] = 0.0f; m.fMap[1][1] = 0.0f; m.fMap[1][2] = 0.0f; m.fMap[1][3] = 0.0f;
-	m.fMap[2][0] = 0.0f; m.fMap[2][1] = 0.0f; m.fMap[2][2] = 0.0f; m.fMap[2][3] = 0.0f;
-	m.fMap[3][0] = 0.0f; m.fMap[3][1] = 0.0f; m.fMap[3][2] = 0.0f; m.fMap[3][3] = 0.0f;
-	m.NotIdentity();
-}
-
 void plBTPhysical::SendNewLocation(bool synchTransform, bool isSynchUpdate)
 {
 
@@ -456,19 +531,16 @@ plDrawableSpans* plBTPhysical::CreateProxy(hsGMaterial* mat, hsTArray<uint32_t>&
 
 	btCollisionShape* shape = fActor->getCollisionShape();
 
-	if (shape->getShapeType())
+	btBoxShape* boxDesc = static_cast<btBoxShape *>(shape);
+	if (boxDesc)
 	{
-		btBoxShape* boxDesc = static_cast<btBoxShape *>(shape);
-		if (boxDesc)
-		{
-			// Get Bullet Scale
-			btVector3 bDim = boxDesc->getLocalScaling();
+		// Get Bullet Scale
+		btVector3 bDim = boxDesc->getImplicitShapeDimensions();
 
-			draw = plDrawableGenerator::GenerateBoxDrawable(bDim.x(), bDim.y(), bDim.z(), mat, l2w, blended, nil, &idx, draw);
+		draw = plDrawableGenerator::GenerateBoxDrawable(bDim.x(), bDim.y(), bDim.z(), mat, l2w, blended, nil, &idx, draw);
 
-			// could likely also add the bullet stuff here for the engine debug??
+		// could likely also add the bullet stuff here for the engine debug??
 
-		}
 	}
 
 	return draw;

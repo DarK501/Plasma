@@ -20,6 +20,8 @@ public:
 	static void Init();
 	static void Shutdown();
 
+	static bool fExtraProfile;
+
 	static bool InitSimulation();
 
 	void Advance(float delSecs);
