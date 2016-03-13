@@ -199,29 +199,6 @@ bool plBTPhysical::Init(PhysRecipe& recipe)
 
 	// previously we converted to a PhysX matrix here - but for now I'm assuming bullet will be able to deal with the data comming in
 
-	btTransform descTransform;
-	descTransform.setIdentity();
-
-	// and pose
-	hsMatrix44 boxL2W;
-	boxL2W.Reset();
-	boxL2W.SetTranslate(&recipe.bOffset);
-
-	descTransform.setOrigin(btVector3(recipe.l2s.fMap[0][3], recipe.l2s.fMap[1][3], recipe.l2s.fMap[2][3]));
-
-	fMass = recipe.mass;
-
-	btScalar mass(0.);
-	btVector3 localInertia(0, 0, 0);
-
-	if (fMass != 0) {
-
-		btScalar mass(fMass);
-		btVector3 localInertia(0, 0, 0); //?
-
-		actorDesc->calculateLocalInertia(mass, localInertia);
-	}
-
 	switch (fBoundsType)
 	{
 		case plSimDefs::kSphereBounds:
@@ -240,10 +217,22 @@ bool plBTPhysical::Init(PhysRecipe& recipe)
 
 		case plSimDefs::kBoxBounds:
 		{
-			// Set Box Dimensions - these might already be in halfs??
+			
+			btTransform trans;
+			trans.setIdentity();
+
+			hsPoint3 plVec = recipe.l2s.GetTranslate();
+
+			trans.setOrigin(btVector3(plVec.fX, plVec.fY, plVec.fZ));
+			
+			hsMatrix44 boxL2W;
+			boxL2W.Reset();
+			boxL2W.SetTranslate(&recipe.bOffset);
+			//trans.setRotation(boxL2W);
+
+ 		    // Set Box Dimensions - these might already be in halfs??
 			btBoxShape* boxDesc = new btBoxShape(btVector3((recipe.bDimensions.fX) / 2.f, (recipe.bDimensions.fY) / 2.f, (recipe.bDimensions.fZ) / 2.f));
-			//boxDesc->setUserIndex(fGroup);
-			actorDesc->addChildShape(descTransform, boxDesc);
+			actorDesc->addChildShape(trans, boxDesc);
 		}
 	}	
 
@@ -252,6 +241,10 @@ bool plBTPhysical::Init(PhysRecipe& recipe)
 	// grab the current scene so that we can do things with it
 	
 	try {
+
+		btScalar mass(0.f);
+		btVector3 localInertia(0, 0, 0);
+
 		// creating the actor
 		btDefaultMotionState* motionState = new btDefaultMotionState();
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, actorDesc, localInertia);
@@ -339,11 +332,14 @@ void plBTPhysical::IGetTransformGlobal(hsMatrix44& l2w) const
 {
 	
 	// set l2w - magic I've been missing for proxies?
-	btTransform bodyLoc = fActor->getWorldTransform();
+    btTransform bodyLoc = fActor->getWorldTransform();
 	btVector3 bodyPos = bodyLoc.getOrigin();
 
 	hsPoint3* transVec = new hsPoint3(bodyPos.getX(), bodyPos.getY(), bodyPos.getZ() );
-	l2w.SetTranslate(transVec);
+	l2w.Reset(); // this resets the point to 0
+	l2w.SetTranslate(transVec); // we then pass a the vector in as a translation 
+
+	// Currently have objects at 0,0,0! This needs more work to have them placed correctly in the world
 		
 	if (fWorldKey)
 	{
@@ -479,9 +475,7 @@ void plBTPhysical::SetAngularVelocitySim(const hsVector3& vel)
 void plBTPhysical::SetTransform(const hsMatrix44& l2w, const hsMatrix44& w2l, bool force)
 {
 	
-	ISetTransformGlobal(l2w);
-	
-	/*if (force || (fActor->getCollisionFlags()|btCollisionObject::CF_KINEMATIC_OBJECT)
+	if (force || (fActor->getCollisionFlags()|btCollisionObject::CF_KINEMATIC_OBJECT)
 		&& (fWorldKey || !CompareMatrices(l2w, fCachedLocal2World, .0001f)))
 	{
 		ISetTransformGlobal(l2w);
@@ -491,13 +485,13 @@ void plBTPhysical::SetTransform(const hsMatrix44& l2w, const hsMatrix44& w2l, bo
 	{
 		if (!(fActor->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT) && plSimulationMgr::fExtraProfile)
 			hsAssert("Setting transform on non-dynamic: %s.", GetKeyName().c_str());
-	}*/
+	}
 }
 
 void plBTPhysical::GetTransform(hsMatrix44& l2w, hsMatrix44& w2l)
 {
 	IGetTransformGlobal(l2w);
-	l2w.GetInverse(&w2l);
+	//l2w.GetInverse(&w2l);
 }
 
 void plBTPhysical::ApplyHitForce()
@@ -535,7 +529,7 @@ plDrawableSpans* plBTPhysical::CreateProxy(hsGMaterial* mat, hsTArray<uint32_t>&
 {
 	plDrawableSpans* draw = addTo;
 	hsMatrix44 l2w, unused;
-	GetTransform(l2w, unused);
+	GetTransform(l2w, unused); // This is mangling some how?
 
 	bool blended = ((mat->GetLayer(0)->GetBlendFlags() & hsGMatState::kBlendMask));
 
