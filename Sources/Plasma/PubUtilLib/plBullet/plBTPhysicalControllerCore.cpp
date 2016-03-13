@@ -7,6 +7,7 @@
 
 // bullet includes
 #include "btBulletDynamicsCommon.h"
+#include "BulletCollision/CollisionDispatch/btGhostObject.h"
 #include "BulletDynamics/Character/btKinematicCharacterController.h"
 
 #include "plDrawable/plDrawableGenerator.h"
@@ -14,14 +15,22 @@
 #include "plSurface/plLayerInterface.h" // For our proxy
 
 #define kCCTSkinWidth 0.1f
+#define kCCTStepOffset 0.7f
+#define kCCTZOffset ((fRadius + (fHeight / 2)) + kCCTSkinWidth)
 #define kPhysHeightCorrection 0.8f
+#define kPhysZOffset ((kCCTZOffset + (kPhysHeightCorrection / 2)) - 0.05f)
 #define kAvatarMass 200.0f
 
 static std::vector<plBTPhysicalControllerCore*> gControllers;
 int plBTPhysicalControllerCore::fBTControllersMax = 0;
 
 plBTPhysicalControllerCore::plBTPhysicalControllerCore(plKey ownerSO, float height, float radius, bool human)
-:plPhysicalControllerCore(ownerSO, height, radius) 
+	:plPhysicalControllerCore(ownerSO, height, radius)
+	, fController(nil)
+	, fActor(nil)
+	, fProxyGen(nil)
+	, fKinematicCCT(true)
+	, fHuman(human)
 {
 
 	//create controller
@@ -57,48 +66,47 @@ void plBTPhysicalControllerCore::ICreateController(const hsPoint3& pos)
 	btDiscreteDynamicsWorld* scene = plSimulationMgr::GetInstance()->GetScene(fWorldKey);
 
 	if (fKinematicCCT) {
-		// Add a shape to the exisiting actor?
-		btCollisionShape* desc = new btCapsuleShape( btScalar(fRadius), btScalar(fHeight) );
 		
-		btTransform descTransform;
-		descTransform.setIdentity();
-		descTransform.setOrigin(btVector3(pos.fX, pos.fY, pos.fZ));
+		btTransform trans;
+		trans.setIdentity();
+		trans.setOrigin(btVector3(pos.fX, pos.fY, pos.fZ + kCCTZOffset));
 		
-		btScalar mass(0.);
-		btVector3 localInertia(0, 0, 0);
+		btConvexShape* shape = new btCapsuleShape(fRadius, fHeight);
 
-		btDefaultMotionState * myMotionState = new btDefaultMotionState(descTransform);
-		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, desc, localInertia);
-		btRigidBody* body = new btRigidBody(rbInfo);
+		btPairCachingGhostObject* ghostObj = new btPairCachingGhostObject();
+		ghostObj->setWorldTransform(trans);
+		// broadphase needs exposing
+		ghostObj->setCollisionShape(shape);
+		ghostObj->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
 
-		scene->addRigidBody(body);
+		btScalar stepHeight(kCCTStepOffset);
 
+		fController = new btKinematicCharacterController(ghostObj, shape, stepHeight, 2);
+		
+		fController->setMaxSlope(kSlopeLimit);
+		fActor = fController->getGhostObject();
+
+		scene->addCollisionObject(ghostObj);
+		scene->addAction(fController);
 	}
 	else
 	{
 
-		// PhysX previously described the avatar as a Kinematic Controller - this is just a shape for now
-		btCollisionShape* capDesc = new btCapsuleShape(btScalar(fRadius + kCCTSkinWidth), btScalar(fHeight + kPhysHeightCorrection));
+		btTransform trans;
+		trans.setIdentity();
+		trans.setOrigin(btVector3(pos.fX, pos.fY, pos.fZ + kCCTZOffset));
 
-		btTransform descTransform;
-		descTransform.setIdentity();
+		btCollisionShape* shape = new btCapsuleShape(btScalar(fRadius + kCCTSkinWidth), btScalar(fHeight + kPhysHeightCorrection));
 
-		// figure out if this is how we deal with freezing the object (Gravity and Rotation)?
 		btScalar mass(kAvatarMass);
 		btVector3 localIntertia(0, 0, 0);
 		
-		if (fEnabled) 
-		{
-			capDesc->setUserIndex(plSimDefs::kGroupAvatar);
-			capDesc->setUserPointer(this);
-		}
-		else
-		{
-			// switch to be Kinematic?
-			capDesc->setUserIndex(plSimDefs::kGroupAvatarKinematic);
-			capDesc->setUserPointer(this);
-		}
+		shape->calculateLocalInertia(mass, localIntertia);
+		btDefaultMotionState* shapeMotionShape = new btDefaultMotionState(trans);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, shapeMotionShape, shape, localIntertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
 
+		scene->addRigidBody(body);
 	}
 
 	
@@ -118,7 +126,21 @@ plPhysicalControllerCore* plPhysicalControllerCore::Create(plKey ownerSO, float 
 
 void plBTPhysicalControllerCore::Enable(bool enable)
 {
-
+	if (fEnabled != enable) 
+	{
+		fEnabled = enable;
+		if (fEnabled)
+		{
+			fEnableChanged = true;
+		}
+		else
+		{
+			if (!fKinematicCCT)
+			{
+				// Set body as Kinematic
+			}
+		}
+	}
 }
 
 void plBTPhysicalControllerCore::SetSubworld(plKey world) 
@@ -128,12 +150,18 @@ void plBTPhysicalControllerCore::SetSubworld(plKey world)
 
 void plBTPhysicalControllerCore::GetState(hsPoint3& pos, float& zRot)
 {
+	fLocalRotation.NormalizeIfNeeded();
+	fLocalRotation.GetAngleAxis(&zRot, (hsVector3*)&pos);
 
+	if (pos.fZ < 0)
+		zRot = (2 * float(M_PI)) - zRot; // reverse Axis
+
+	pos = fLocalPosition;
 }
 
 void plBTPhysicalControllerCore::SetState(const hsPoint3& pos, float zRot)
 {
-
+	plSceneObject* so = plSceneObject::ConvertNoRef(fOwner->ObjectIsLoaded());
 
 }
 
@@ -142,6 +170,9 @@ void plBTPhysicalControllerCore::SetMovementStrategy(plMovementStrategy* strateg
 	if (fKinematicCCT != strategy->IsKinematic())
 	{
 		// recreate the controller as Kinematic
+		IDeleteController();
+		fKinematicCCT = !fKinematicCCT;
+		ICreateController(fLocalPosition);
 
 	}
 
@@ -181,12 +212,17 @@ void plBTPhysicalControllerCore::LeaveAge()
 
 }
 
+void plBTPhysicalControllerCore::Apply(float delSecs) {
+
+}
+
 void plBTPhysicalControllerCore::IHandleEnableChanged() 
 {
 
 }
 
-plDrawableSpans* plBTPhysicalControllerCore::CreateProxy(hsGMaterial* mat, hsTArray<uint32_t>& idx, plDrawableSpans* addTo) {
+plDrawableSpans* plBTPhysicalControllerCore::CreateProxy(hsGMaterial* mat, hsTArray<uint32_t>& idx, plDrawableSpans* addTo) 
+{
 
 	plDrawableSpans* draw = addTo;
 	
@@ -197,4 +233,21 @@ plDrawableSpans* plBTPhysicalControllerCore::CreateProxy(hsGMaterial* mat, hsTAr
 	
 	//Just return what we are given
 	return draw;
+}
+
+void plBTPhysicalControllerCore::IDeleteController()
+{
+	if (fKinematicCCT)
+	{
+		// Release the controller?
+
+	} 
+	else
+	{
+		btDiscreteDynamicsWorld* scene = plSimulationMgr::GetInstance()->GetScene(fWorldKey);
+
+	}
+	
+	fActor = nil;
+	//plSimulationMgr::GetInstance()->ReleaseScene(fWorldKey);
 }

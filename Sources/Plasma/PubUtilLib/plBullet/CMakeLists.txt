@@ -9,6 +9,7 @@ set(plBullet_SOURCES
     plBTPhysicalControllerCore.cpp
 	plBTPhysical.cpp
 	plSimulationMgr.cpp
+	plBTDebug.cpp
 )
 
 set(plBullet_HEADERS
@@ -16,7 +17,7 @@ set(plBullet_HEADERS
     plBTPhysical.h
 	plBTPhysicalControllerCore.h
 	plSimulationMgr.h
-	
+	plBTDebug.h	
 )
 
 add_library(plBullet STATIC ${plBullet_SOURCES} ${plBullet_HEADERS})

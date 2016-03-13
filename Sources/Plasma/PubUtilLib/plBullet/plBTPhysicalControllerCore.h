@@ -3,6 +3,13 @@
 */
 #include "plAvatar/plPhysicalControllerCore.h"
 
+
+class plDrawableSpans;
+class plPhysicalProxy;
+class hsGMaterial;
+
+class btKinematicCharacterController;
+class btCollisionObject;
 class btRigidBody;
 
 class btDefaultCollisionConfiguration;
@@ -43,17 +50,23 @@ public:
 
 	virtual void LeaveAge();
 
+	static void Apply(float delSecs);
+
 	static int fBTControllersMax;
 
 protected:
 	void ICreateController(const hsPoint3& pos);
-
+	void IDeleteController();
+	
 	virtual void IHandleEnableChanged();
+
+	plPhysicalProxy* fProxyGen;
 
 	bool fKinematicCCT;
 	bool fHuman;
 
-	btRigidBody* fActor;
+	btKinematicCharacterController* fController;
+	btCollisionObject* fActor;
 
 	btDefaultCollisionConfiguration* fCollisionConfig;
 	btCollisionDispatcher* fCollisionDispatch;

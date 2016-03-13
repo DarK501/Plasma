@@ -161,8 +161,8 @@ void plBTPhysical::Read(hsStream* stream, hsResMgr* mgr)
 	}
 	else 
 	{
-		// Cooked meshes - not sure what we want to do with them at the moment!
-
+		// Cooked meshes - not sure what we want to do with them at the moment, read to ensure that we have the object at least
+		stream->ReadLE32(); //?
 	}
 
 	Init(recipe);
@@ -172,7 +172,6 @@ void plBTPhysical::Read(hsStream* stream, hsResMgr* mgr)
 
 	physColor.Set(1.f, 0.f, 0.f, 1.f);
 	opac = 1.0f;
-
 
 	fProxyGen = new plPhysicalProxy(hsColorRGBA().Set(0, 0, 0, 1.f), physColor, opac);
 	fProxyGen->Init(this);
@@ -208,7 +207,7 @@ bool plBTPhysical::Init(PhysRecipe& recipe)
 	boxL2W.Reset();
 	boxL2W.SetTranslate(&recipe.bOffset);
 
-	descTransform.setOrigin(btVector3(recipe.l2s.fMap[0][4], recipe.l2s.fMap[1][4], recipe.l2s.fMap[2][4]));
+	descTransform.setOrigin(btVector3(recipe.l2s.fMap[0][3], recipe.l2s.fMap[1][3], recipe.l2s.fMap[2][3]));
 
 	fMass = recipe.mass;
 
@@ -242,8 +241,8 @@ bool plBTPhysical::Init(PhysRecipe& recipe)
 		case plSimDefs::kBoxBounds:
 		{
 			// Set Box Dimensions - these might already be in halfs??
-			btBoxShape* boxDesc = new btBoxShape(btVector3((recipe.bDimensions.fX) * 0.5f, (recipe.bDimensions.fY) * 0.5f, (recipe.bDimensions.fZ) * 0.5f));
-			boxDesc->setUserIndex(fGroup);
+			btBoxShape* boxDesc = new btBoxShape(btVector3((recipe.bDimensions.fX) / 2.f, (recipe.bDimensions.fY) / 2.f, (recipe.bDimensions.fZ) / 2.f));
+			//boxDesc->setUserIndex(fGroup);
 			actorDesc->addChildShape(descTransform, boxDesc);
 		}
 	}	
@@ -338,6 +337,14 @@ bool plBTPhysical::HandleRefMsg(plGenRefMsg* refMsg)
 
 void plBTPhysical::IGetTransformGlobal(hsMatrix44& l2w) const
 {
+	
+	// set l2w - magic I've been missing for proxies?
+	btTransform bodyLoc = fActor->getWorldTransform();
+	btVector3 bodyPos = bodyLoc.getOrigin();
+
+	hsPoint3* transVec = new hsPoint3(bodyPos.getX(), bodyPos.getY(), bodyPos.getZ() );
+	l2w.SetTranslate(transVec);
+		
 	if (fWorldKey)
 	{
 		plSceneObject* so = plSceneObject::ConvertNoRef(fWorldKey->ObjectIsLoaded());
@@ -471,7 +478,10 @@ void plBTPhysical::SetAngularVelocitySim(const hsVector3& vel)
 
 void plBTPhysical::SetTransform(const hsMatrix44& l2w, const hsMatrix44& w2l, bool force)
 {
-	if (force || (fActor->getCollisionFlags()|btCollisionObject::CF_KINEMATIC_OBJECT)
+	
+	ISetTransformGlobal(l2w);
+	
+	/*if (force || (fActor->getCollisionFlags()|btCollisionObject::CF_KINEMATIC_OBJECT)
 		&& (fWorldKey || !CompareMatrices(l2w, fCachedLocal2World, .0001f)))
 	{
 		ISetTransformGlobal(l2w);
@@ -481,7 +491,7 @@ void plBTPhysical::SetTransform(const hsMatrix44& l2w, const hsMatrix44& w2l, bo
 	{
 		if (!(fActor->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT) && plSimulationMgr::fExtraProfile)
 			hsAssert("Setting transform on non-dynamic: %s.", GetKeyName().c_str());
-	}
+	}*/
 }
 
 void plBTPhysical::GetTransform(hsMatrix44& l2w, hsMatrix44& w2l)
@@ -530,18 +540,16 @@ plDrawableSpans* plBTPhysical::CreateProxy(hsGMaterial* mat, hsTArray<uint32_t>&
 	bool blended = ((mat->GetLayer(0)->GetBlendFlags() & hsGMatState::kBlendMask));
 
 	btCollisionShape* shape = fActor->getCollisionShape();
+	btCompoundShape* compDesc = static_cast<btCompoundShape *>(shape);
 
-	btBoxShape* boxDesc = static_cast<btBoxShape *>(shape);
-	if (boxDesc)
+	for (int i = 0 ; i < compDesc->getNumChildShapes(); i++)
 	{
-		// Get Bullet Scale
-		btVector3 bDim = boxDesc->getImplicitShapeDimensions();
 
-		draw = plDrawableGenerator::GenerateBoxDrawable(bDim.x(), bDim.y(), bDim.z(), mat, l2w, blended, nil, &idx, draw);
+		btBoxShape* boxDesc = static_cast<btBoxShape *>(compDesc->getChildShape(i));
+		btVector3 boxMatrix = boxDesc->getHalfExtentsWithoutMargin();
 
-		// could likely also add the bullet stuff here for the engine debug??
+		draw = plDrawableGenerator::GenerateBoxDrawable((boxMatrix.getX() * 2.f), (boxMatrix.getZ() * 2.f), (boxMatrix.getY() * 2.f), mat, l2w, blended, nil, &idx, draw);
 
 	}
-
 	return draw;
 }

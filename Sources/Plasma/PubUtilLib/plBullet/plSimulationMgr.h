@@ -8,6 +8,8 @@
 
 class btDiscreteDynamicsWorld;
 class plStatusLog;
+class plLOSDispatch;
+class plPhysicsSoundMgr;
 
 
 class plSimulationMgr : public hsKeyedObject
@@ -39,8 +41,16 @@ public:
 
 protected:
 
+	plPhysicsSoundMgr* fSoundMgr;
+
 	typedef std::map<plKey, btDiscreteDynamicsWorld*> SceneMap;
 	SceneMap fScenes;
+
+	//plLOSDispatch* fLOSDispatch;
+
+	bool fSuspended;
+	float fAccumulator;
+	uint32_t fStepCount;
 
 	//fSDK; - this is redundent
 	plStatusLog *fLog;
